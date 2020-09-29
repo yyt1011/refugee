@@ -32,36 +32,32 @@
 
         React.useEffect(() => {
           d3.csv(nationalityURL).then((d) => {
+            //sort by year
             const nested_data = d3
               .nest()
               .key((d) => d.year)
               .entries(d);
-
+            //nest by nationality
             nested_data.forEach((y) => {
               let d = y.values;
               y.byNationality = d3
                 .nest()
                 .key((d) => d.nationality)
                 .entries(d);
+              //for dropdown
               options.push(y.key);
             });
+            //nest by nationality total
+            nested_data.forEach((y) => {
+              let country = y.byNationality;
+              country.forEach((c) => {
+                c.nationality_total = c.values[0].nationality_total;
+              });
+            });
 
-            // const selected_data = nested_data.filter(
-            //   (d) => d.key == selectedYear
-            // )[0].byNationality;
-
-            // selected_data.forEach((n) => {
-            //   n.nationality_total = n.values[0].nationality_total;
-            // });
-            // const sorted_data = selected_data
-            //   .sort((a, b) => b.nationality_total - a.nationality_total)
-            //   .slice(0, 15);
-
-            // setData(sorted_data);
             setData(nested_data);
           });
         }, []);
-
         return data;
       };
       const sortData = ({ data_complete, selectedYear }) => {
@@ -69,9 +65,6 @@
           (d) => d.key == selectedYear
         )[0].byNationality;
 
-        selected_data.forEach((n) => {
-          n.nationality_total = n.values[0].nationality_total;
-        });
         const sorted_data = selected_data
           .sort((a, b) => b.nationality_total - a.nationality_total)
           .slice(0, 15);
@@ -81,11 +74,19 @@
       //----axis----//
       //-x scale-//
       const setXScale = (data) => {
+        const xMax = [];
+        data.map((year) => {
+          year.byNationality.forEach((num) => {
+            xMax.push(+num.nationality_total);
+          });
+        });
         return d3
           .scaleLinear()
           .range([0, innerwidth])
-          .domain([0, d3.max(data.map((d) => +d.nationality_total))]);
+          .domain([0, d3.max(xMax)])
+          .nice();
       };
+
       const tickFormat = (tickValue) => {
         return d3.format("0.2s")(tickValue);
       };
@@ -170,20 +171,19 @@
         const initData = null;
         const initYear = "2015";
         const [selectedYear, setSelectedYear] = React.useState(initYear);
-
         const data_complete = useData({ initData, selectedYear });
-        let data = [];
-        if (data_complete) {
-          data = sortData({ data_complete, selectedYear });
-        }
 
-        if (!data) {
+        //wait for data to load fully
+        if (!data_complete) {
           return <p>Loading...</p>;
         }
 
-        //-----set up scales------//
+        let data = [];
+        data = sortData({ data_complete, selectedYear });
 
-        const xScale = setXScale(data);
+        //-----set up scales------//
+        // x scale with fixed range
+        const xScale = setXScale(data_complete);
         const yScale = setYScale(data);
 
         return (
