@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" type="text/css" href="style.css" />
+    <link rel="stylesheet" href="style.css" />
     <script src="https://d3js.org/d3.v6.js"></script>
     <script src="https://d3js.org/d3-collection.v1.min.js"></script>
     <script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
@@ -14,94 +14,209 @@
   <body>
     <div id="app"></div>
     <script type="text/babel">
+      //---set canvas---//
       const width = 800;
       const height = 600;
-      const margin = { top: 20, right: 20, bottom: 20, left: 150 };
+      const margin = { top: 20, right: 20, bottom: 50, left: 150 };
       const innerwidth = width - margin.left - margin.right;
       const innerheight = height - margin.top - margin.bottom;
+
+      //---get the data---//
       const destinationURL =
         "https://gist.githubusercontent.com/yyt1011/b9bc2f18b4cc70a1ef4fa356355016e0/raw/880108566c7fb8ac41005950c54134d778f8e2b7/Total_by_destination";
       const nationalityURL =
-        "https://gist.githubusercontent.com/yyt1011/f02add39a15a4d25ac08318c5537a7f9/raw/fd50f2e5d844befc74b611e668e9e85ce4661971/Total_by_nationality";
-      const initData = null;
+        "https://gist.githubusercontent.com/yyt1011/f02add39a15a4d25ac08318c5537a7f9/raw/d6ba520ff9cb5642fef860440addc8db78018aca/Total_by_nationality";
 
-      //-----react related happens from here-------//
-      const App = () => {
+      const useData = ({ initData, selectedYear }) => {
         const [data, setData] = React.useState(initData);
 
         React.useEffect(() => {
           d3.csv(nationalityURL).then((d) => {
-            //--work with only 2015 data first--//
-            const d2015 = d.filter((e) => e.year == "2015");
-            const nationality2015_ = d3
+            const nested_data = d3
               .nest()
-              .key((d) => d.nationality)
-              .entries(d2015);
-            const n15_ = nationality2015_.map((v) => {
-              return v.values[0];
+              .key((d) => d.year)
+              .entries(d);
+
+            nested_data.forEach((y) => {
+              let d = y.values;
+              y.byNationality = d3
+                .nest()
+                .key((d) => d.nationality)
+                .entries(d);
+              options.push(y.key);
             });
-            const n15 = n15_
-              .sort((a, b) => b.nationality_total - a.nationality_total)
-              .slice(0, 15);
-            setData(n15);
+
+            // const selected_data = nested_data.filter(
+            //   (d) => d.key == selectedYear
+            // )[0].byNationality;
+
+            // selected_data.forEach((n) => {
+            //   n.nationality_total = n.values[0].nationality_total;
+            // });
+            // const sorted_data = selected_data
+            //   .sort((a, b) => b.nationality_total - a.nationality_total)
+            //   .slice(0, 15);
+
+            // setData(sorted_data);
+            setData(nested_data);
           });
         }, []);
+
+        return data;
+      };
+      const sortData = ({ data_complete, selectedYear }) => {
+        const selected_data = data_complete.filter(
+          (d) => d.key == selectedYear
+        )[0].byNationality;
+
+        selected_data.forEach((n) => {
+          n.nationality_total = n.values[0].nationality_total;
+        });
+        const sorted_data = selected_data
+          .sort((a, b) => b.nationality_total - a.nationality_total)
+          .slice(0, 15);
+        return sorted_data;
+      };
+
+      //----axis----//
+      //-x scale-//
+      const setXScale = (data) => {
+        return d3
+          .scaleLinear()
+          .range([0, innerwidth])
+          .domain([0, d3.max(data.map((d) => +d.nationality_total))]);
+      };
+      const tickFormat = (tickValue) => {
+        return d3.format("0.2s")(tickValue);
+      };
+      //-x axis-//
+      const BottomAxis = ({ xScale, innerheight, tickFormat }) =>
+        xScale.ticks().map((tickValue) => (
+          <g
+            className="x axis"
+            key={tickValue}
+            transform={`translate(${xScale(tickValue)},${0})`}
+          >
+            <line y2={innerheight} />
+            <text
+              y={innerheight + 5}
+              style={{ textAnchor: "middle" }}
+              dy=".71em"
+            >
+              {tickFormat(tickValue)}
+            </text>
+          </g>
+        ));
+      //-y scale-//
+      const setYScale = (data) => {
+        return d3
+          .scaleBand()
+          .domain(data.map((d) => d.key))
+          .range([0, innerheight])
+          .padding(0.15);
+      };
+      //-y axis-//
+      const LeftAxis = ({ yScale }) =>
+        yScale.domain().map((tickValue) => (
+          <text
+            className="y axis"
+            key={tickValue}
+            y={yScale(tickValue) + yScale.bandwidth() / 2}
+            style={{ textAnchor: "end" }}
+            dx="-.71em"
+            dy=".32em"
+          >
+            {tickValue}
+          </text>
+        ));
+      //----bar elements----//
+      const Bars = ({ data, yScale, xScale }) =>
+        data.map((d) => (
+          <rect
+            key={d.key}
+            x={0}
+            y={yScale(d.key)}
+            width={xScale(+d.nationality_total)}
+            height={yScale.bandwidth()}
+          >
+            <title>{d.nationality_total}</title>
+          </rect>
+        ));
+
+      //---dropdown---//
+      const Dropdown = ({ setSelectedYear, defaultYear }) => {
+        return (
+          <select
+            id="year-select"
+            onChange={(event) => {
+              setSelectedYear(event.target.value);
+            }}
+          >
+            {options.map((option) => {
+              return (
+                <option value={option} selected={option === defaultYear}>
+                  {option}
+                </option>
+              );
+            })}
+          </select>
+        );
+      };
+      //useData function feeds into options
+      const options = [];
+
+      //-----react related happens from here-------//
+      const App = () => {
+        const initData = null;
+        const initYear = "2015";
+        const [selectedYear, setSelectedYear] = React.useState(initYear);
+
+        const data_complete = useData({ initData, selectedYear });
+        let data = [];
+        if (data_complete) {
+          data = sortData({ data_complete, selectedYear });
+        }
 
         if (!data) {
           return <p>Loading...</p>;
         }
-        //-----set up scales------//
-        const xScale = d3
-          .scaleLinear()
-          .range([0, innerwidth])
-          .domain([0, d3.max(data.map((d) => +d.nationality_total))]);
 
-        const yScale = d3
-          .scaleBand()
-          .domain(data.map((d) => d.nationality))
-          .range([0, innerheight]);
+        //-----set up scales------//
+
+        const xScale = setXScale(data);
+        const yScale = setYScale(data);
 
         return (
-          <svg width={width} height={height}>
-            <g transform={`translate(${margin.left},${margin.top})`}>
-              {xScale.ticks().map((tickValue) => (
-                <g
-                  key={tickValue}
-                  transform={`translate(${xScale(tickValue)},${0})`}
-                >
-                  <line y2={innerheight} stroke={"#f0f0f0"} />
-                  <text
-                    y={innerheight + 5}
-                    style={{ textAnchor: "middle" }}
-                    dy=".71em"
-                  >
-                    {tickValue}
-                  </text>
-                </g>
-              ))}
-              {yScale.domain().map((tickValue) => (
-                <text
-                  key={tickValue}
-                  y={yScale(tickValue) + yScale.bandwidth() / 2}
-                  style={{ textAnchor: "end" }}
-                  dx="-.71em"
-                  dy=".32em"
-                >
-                  {tickValue}
-                </text>
-              ))}
-              {data.map((d) => (
-                <rect
-                  key={d.nationality}
-                  x={0}
-                  y={yScale(d.nationality)}
-                  width={xScale(+d.nationality_total)}
-                  height={yScale.bandwidth()}
-                  fill={"#4dbf71"}
+          <div>
+            <div id="menu">
+              <label for="year-select">year: </label>
+              <Dropdown
+                id={"year-select"}
+                setSelectedYear={setSelectedYear}
+                defaultYear={initYear}
+              />
+            </div>
+            <svg width={width} height={height}>
+              <g transform={`translate(${margin.left},${margin.top})`}>
+                <BottomAxis
+                  xScale={xScale}
+                  innerheight={innerheight}
+                  tickFormat={tickFormat}
                 />
-              ))}
-            </g>
-          </svg>
+                <text
+                  className="label"
+                  x={innerwidth / 2}
+                  y={innerheight}
+                  dy="2.32em"
+                  style={{ textAnchor: "middle" }}
+                >
+                  Number of refugees arrived in {selectedYear} by nationality
+                </text>
+                <LeftAxis yScale={yScale} />
+                <Bars data={data} yScale={yScale} xScale={xScale} />
+              </g>
+            </svg>
+          </div>
         );
       };
       const rootElement = document.getElementById("app");
