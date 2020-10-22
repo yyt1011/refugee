@@ -187,9 +187,15 @@
         const yScale = setYScale(data);
 
         return (
-          <div>
+          <div class="container">
+            <h1>Decline in refugee arrival since 2017</h1>
+            <p>
+              After the Trump administration decided to slash refugee cap in
+              2016, US saw a sharp decline in refugee arrival across all top 10
+              countries where refugees were from.
+            </p>
             <div id="menu">
-              <label for="year-select">year: </label>
+              <label for="year-select">Pick a year: </label>
               <Dropdown
                 id={"year-select"}
                 setSelectedYear={setSelectedYear}

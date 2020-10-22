@@ -1,30 +1,36 @@
-.menu label {
+.container {
+  width: 60%;
+  margin: 40px auto;
+}
+.container h1 {
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+}
+.container #menu {
+  margin-top: 40px;
+}
+.container #menu label {
   font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
   font-size: 16px;
 }
-.menu select option {
+.container #menu select option {
   font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
   font-size: 16px;
 }
-
-.x.axis text {
+.container .x.axis text {
   font-size: 12px;
   fill: #8e8883;
 }
-.x.axis line {
+.container .x.axis line {
   stroke: #c0c0bb;
 }
-
-.y.axis {
+.container .y.axis {
   fill: #222222;
 }
-
-.label {
+.container .label {
   fill: #222222;
   font-size: 16px;
 }
-
-rect {
+.container rect {
   fill: #137b80;
 }
 

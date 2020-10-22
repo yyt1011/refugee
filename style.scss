@@ -1,35 +1,43 @@
-.menu {
-  label {
+.container {
+  width: 60%;
+  margin: 40px auto;
+  h1 {
     font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
-    font-size: 16px;
   }
-  select {
-    option {
+  #menu {
+    margin-top: 40px;
+    label {
       font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
       font-size: 16px;
     }
+    select {
+      option {
+        font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+        font-size: 16px;
+      }
+    }
   }
-}
-.x.axis {
-  text {
-    font-size: 12px;
-    fill: #8e8883;
+  .x.axis {
+    text {
+      font-size: 12px;
+      fill: #8e8883;
+    }
+
+    line {
+      stroke: #c0c0bb;
+    }
   }
 
-  line {
-    stroke: #c0c0bb;
+  .y.axis {
+    fill: #222222;
   }
-}
 
-.y.axis {
-  fill: #222222;
-}
+  .label {
+    fill: #222222;
+    font-size: 16px;
+  }
 
-.label {
-  fill: #222222;
-  font-size: 16px;
-}
-
-rect {
-  fill: #137b80;
+  rect {
+    fill: #137b80;
+  }
 }
